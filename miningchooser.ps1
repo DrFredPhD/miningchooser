@@ -1,29 +1,74 @@
-function Get-Profit {
+$MeasureStart = Get-Date
+# Set profit timespan preference for each currency here
+$CoinTime = @{
+"ETH" = "Month";
+"ETC" = "Month";
+"XMR" = "Year"}
+$CoinURL = @{
+"ETH" = "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=30&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
+"ETC" = "http://whattomine.com/coins/162-etc-ethash?utf8=%E2%9C%93&hr=29.7&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
+"XMR" = "http://whattomine.com/coins/101-xmr-cryptonight?utf8=%E2%9C%93&hr=335&p=40&fee=2.6&cost=0.19&hcost=0.0&commit=Calculate"}
+$CoinRegex = '.*\$([0-9\.\-]*)'
+$CoinStr = @{}
+$TimeSpans = @("Hour", "Day", "Week", "Month", "Year")
+$XMRWeighting = @{"Year"=10.0;"Month"=(10.0/12);"Week"=(10.0/52.1786);"Day"=(10.0/365.25);"Hour"=(10.0/8766)}
+
+Function Get-Profit {
     # Will probably change soon, hence these params are good for now
-    param ([string]$coin, [string]$url, [string]$regex)
-    try {$site = Invoke-WebRequest $url}
-    catch {"Seems like we couldn't connect (website may be down)"
-        throw $_}
-    $temp = $site.AllElements.outerText[1] -match $regex
-    if ($temp -eq 1) {$Profit = $matches[1]}
-    else {echo "Can't Find Data (regex found no match)"
-        break}
-    return $Profit
+    Param ([string]$Coin, $URL, $Regex)
+    Try {$Site = Invoke-WebRequest $URL}
+    Catch {Write-Warning "Seems like we couldn't connect (website may be down)"
+        Throw $_}
+    $Temp = $Site.AllElements.outerText[1] -match $Regex
+    If ($Temp -eq 1) {$Profit = $Matches[1]}
+    Else {Write-Warning "Can't find data (regex found no match for $Coin using pattern $Regex)"
+        Break}
+    Return $Profit
 }
 
-$ETHProfit = Get-Profit "ETH" "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=30&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate" 'Month.*\$([0-9\.\-]*)'
-$ETCProfit = Get-Profit "ETC" "http://whattomine.com/coins/162-etc-ethash?utf8=%E2%9C%93&hr=29.7&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate" 'Month.*\$([0-9\.\-]*)'
-$XMRProfit = Get-Profit "XMR" "http://whattomine.com/coins/101-xmr-cryptonight?utf8=%E2%9C%93&hr=335&p=40&fee=2.6&cost=0.19&hcost=0.0&commit=Calculate" 'Year.*\$([0-9\.\-]*)'
-echo 'ETH $ per month' $ETHProfit 'ETC $ per month' $ETCProfit 'XMR $ per year' $XMRProfit
-
-try {
-    if ($ETHProfit -lt 0 -AND $ETCProfit -lt 0) {echo "ethash mining is not profitable"
-        $ethashoff = $true}
-    elseif ([single]$ETHProfit -ge [single]$ETCProfit) {echo "ETH Wins!"}
-    else {echo "ETC Wins!"}
-    if ([single]$XMRProfit -ge 10.0) {echo "XMR on for great profit"
-        $GreatProfit = $true}
-    else {echo "XMR may not be worth it"
-        $GreatProfit = $false}
+$ProfitTable = @()
+Foreach ($Currency in $CoinURL.Keys) {
+    Write-Host "Checking profit for $Currency..."
+    $CoinObject = New-Object PsObject
+    $CoinObject | Add-Member -MemberType NoteProperty -Name "Currency" -Value $Currency
+    Foreach ($Time in $TimeSpans) {
+        $VarProfit = Get-Profit -Coin $Currency -URL $CoinURL.$Currency -Regex ($Time+$CoinRegex)
+        $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value $VarProfit
+        If ($Time -eq $CoinTime.$Currency) {
+            # Auto create/set profit variable by timespan pref e.g. ETH = $ETHProfit, XMR = $XMRProfit
+            Set-Variable -Name $Currency`Profit -Value $VarProfit
+            $TimeStr = $CoinTime.$Currency
+            $CoinStr.$Currency = "$Currency $ per $TimeStr`: $VarProfit"
+        }
+    }
+    $ProfitTable += $CoinObject
 }
-catch {"Can't compare values (regex matched bad data)"}
+
+# Show profit table and selected timespans
+$ProfitTable | FT -AutoSize
+Foreach ($Currency in $CoinURL.Keys) {Write-Host $CoinStr.$Currency}
+Write-Host
+
+# Evaluation
+Try {
+    If ($CoinTime."ETC" -ne $CoinTime."ETH") {
+        Write-Warning "ETC & ETH timespans do not match"
+        Write-Host "ETC profit is measuring timespan:" $CoinTime."ETC"
+        Write-Host "ETH profit is measuring timespan:" $CoinTime."ETH"
+        Write-Host "No ETC/ETH evaluation will be performed until timespans are corrected to match"
+    }
+    Else {
+        If ($ETHProfit -lt 0 -AND $ETCProfit -lt 0) {Write-Host "ethash mining is not profitable" -ForegroundColor Red # Weighting for ETH/ETC?
+            $ethashoff = $True}
+        Elseif ([single]$ETHProfit -ge [single]$ETCProfit) {Write-Host "ETH Wins!" -ForegroundColor Green}
+        Else {Write-Host "ETC Wins!" -ForegroundColor Green}
+    }
+    If ([single]$XMRProfit -ge $XMRWeighting.($CoinTime."XMR")) {Write-Host "XMR on for great profit" -ForegroundColor Green
+        $GreatProfit = $True}
+    Else {Write-Host "XMR may not be worth it" -ForegroundColor Red
+        $GreatProfit = $False}
+}
+Catch {Write-Warning "Can't compare values (regex matched bad data)"}
+$RunTime = (Get-Date)-$MeasureStart
+Write-Host
+Write-Host "Total script runtime (H:M:S) - "$RunTime.Hours":"$RunTime.Minutes":"$RunTime.Seconds -Separator ""
