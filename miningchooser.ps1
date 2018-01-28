@@ -12,33 +12,33 @@ $CoinRegex = '.*\$([0-9\.\-]*)'
 $CoinStr = @{}
 $TimeSpans = @("Hour", "Day", "Week", "Month", "Year")
 $XMRWeighting = @{"Year"=10.0;"Month"=(10.0/12);"Week"=(10.0/52.1786);"Day"=(10.0/365.25);"Hour"=(10.0/8766)}
-
-Function Get-Profit {
-    # Will probably change soon, hence these params are good for now
-    Param ([string]$Coin, $URL, $Regex)
-    Try {$Site = Invoke-WebRequest $URL}
-    Catch {Write-Warning "Seems like we couldn't connect (website may be down)"
-        Throw $_}
-    $Temp = $Site.AllElements.outerText[1] -match $Regex
-    If ($Temp -eq 1) {$Profit = $Matches[1]}
-    Else {Write-Warning "Can't find data (regex found no match for $Coin using pattern $Regex)"
-        Break}
-    Return $Profit
-}
-
 $ProfitTable = @()
+
 Foreach ($Currency in $CoinURL.Keys) {
     Write-Host "Checking profit for $Currency..."
     $CoinObject = New-Object PsObject
     $CoinObject | Add-Member -MemberType NoteProperty -Name "Currency" -Value $Currency
+    Try {$Site = Invoke-WebRequest $CoinURL.$Currency}
+    Catch {
+        Write-Warning "Seems like we couldn't connect (website may be down)"
+        Throw $_
+    }
     Foreach ($Time in $TimeSpans) {
-        $VarProfit = Get-Profit -Coin $Currency -URL $CoinURL.$Currency -Regex ($Time+$CoinRegex)
-        $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value $VarProfit
-        If ($Time -eq $CoinTime.$Currency) {
-            # Auto create/set profit variable by timespan pref e.g. ETH = $ETHProfit, XMR = $XMRProfit
-            Set-Variable -Name $Currency`Profit -Value $VarProfit
-            $TimeStr = $CoinTime.$Currency
-            $CoinStr.$Currency = "$Currency $ per $TimeStr`: $VarProfit"
+        $Regex = ($Time+$CoinRegex)
+        $Temp = $Site.AllElements.outerText[1] -match $Regex
+        If ($Temp -eq 0) {
+            Write-Warning "Can't find data (regex found no match for $Currency using pattern $Regex)"
+            $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value "-"
+        }
+        Else {
+            $VarProfit = $Matches[1]
+            $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value $VarProfit
+            If ($Time -eq $CoinTime.$Currency) {
+                # Auto create/set profit variable by timespan pref e.g. ETH = $ETHProfit, XMR = $XMRProfit
+                Set-Variable -Name $Currency`Profit -Value $VarProfit
+                $TimeStr = $CoinTime.$Currency
+                $CoinStr.$Currency = "$Currency $ per $TimeStr`: $VarProfit"
+            }
         }
     }
     $ProfitTable += $CoinObject
