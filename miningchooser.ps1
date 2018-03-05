@@ -8,7 +8,7 @@ $CoinURL = @{
 "ETH" = "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=30&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
 "ETC" = "http://whattomine.com/coins/162-etc-ethash?utf8=%E2%9C%93&hr=29.7&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
 "XMR" = "http://whattomine.com/coins/101-xmr-cryptonight?utf8=%E2%9C%93&hr=335&p=40&fee=2.6&cost=0.19&hcost=0.0&commit=Calculate"}
-$CoinRegex = '.*\$([0-9\.\-]*)'
+$CoinRegex = '.*\s(\-)?\$([0-9\.\,]*)'
 $CoinStr = @{}
 $TimeSpans = @("Hour", "Day", "Week", "Month", "Year")
 $XMRWeighting = @{"Year"=10.0;"Month"=(10.0/12);"Week"=(10.0/52.1786);"Day"=(10.0/365.25);"Hour"=(10.0/8766)}
@@ -31,7 +31,7 @@ Foreach ($Currency in $CoinURL.Keys) {
             $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value "-"
         }
         Else {
-            $VarProfit = $Matches[1]
+            $VarProfit = $Matches[1] + $Matches[2]
             $CoinObject | Add-Member -MemberType NoteProperty -Name $Time -Value $VarProfit
             If ($Time -eq $CoinTime.$Currency) {
                 # Auto create/set profit variable by timespan pref e.g. ETH = $ETHProfit, XMR = $XMRProfit
