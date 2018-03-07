@@ -5,13 +5,13 @@ $CoinTime = @{
 "ETC" = "Month";
 "XMR" = "Year"}
 
-$EthashRate = "29"
-$ElecCost = "0.19"
-$GPUpower = "270"
-$PoolFee = "1"
-$XMRFee = "2.6"
-$CryptonightRate = "320"
-$CPUpower = "40"
+$EthashRate = 29.0
+$ElecCost = 0.19
+$GPUpower = 270.0
+$PoolFee = 1.0
+$XMRFee = 2.6
+$CryptonightRate = 320.0
+$CPUpower = 40.0
 
 $CoinURL = @{
 "ETH" = "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=$EthashRate&p=$GPUpower&fee=$PoolFee&cost=$ElecCost&hcost=0.0&commit=Calculate";
