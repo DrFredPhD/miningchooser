@@ -4,10 +4,19 @@ $CoinTime = @{
 "ETH" = "Month";
 "ETC" = "Month";
 "XMR" = "Year"}
+
+$EthashRate = "29"
+$ElecCost = "0.19"
+$GPUpower = "270"
+$PoolFee = "1"
+$XMRFee = "2.6"
+$CryptonightRate = "320"
+$CPUpower = "40"
+
 $CoinURL = @{
-"ETH" = "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=30&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
-"ETC" = "http://whattomine.com/coins/162-etc-ethash?utf8=%E2%9C%93&hr=29.7&p=330&fee=1&cost=0.19&hcost=0.0&commit=Calculate";
-"XMR" = "http://whattomine.com/coins/101-xmr-cryptonight?utf8=%E2%9C%93&hr=335&p=40&fee=2.6&cost=0.19&hcost=0.0&commit=Calculate"}
+"ETH" = "http://whattomine.com/coins/151-eth-ethash?utf8=%E2%9C%93&hr=$EthashRate&p=$GPUpower&fee=$PoolFee&cost=$ElecCost&hcost=0.0&commit=Calculate";
+"ETC" = "http://whattomine.com/coins/162-etc-ethash?utf8=%E2%9C%93&hr=$EthashRate&p=$GPUpower&fee=$PoolFee&cost=$ElecCost&hcost=0.0&commit=Calculate";
+"XMR" = "http://whattomine.com/coins/101-xmr-cryptonight?utf8=%E2%9C%93&hr=$CryptonightRate&p=$CPUpower&fee=$XMRFee&cost=$ElecCost&hcost=0.0&commit=Calculate"}
 $CoinRegex = '.*\s(\-)?\$([0-9\.\,]*)'
 $CoinStr = @{}
 $TimeSpans = @("Hour", "Day", "Week", "Month", "Year")
