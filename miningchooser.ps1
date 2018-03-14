@@ -67,7 +67,7 @@ Try {
         Write-Host "No ETC/ETH evaluation will be performed until timespans are corrected to match"
     }
     Else {
-        If ($ETHProfit -lt 0 -AND $ETCProfit -lt 0) {Write-Host "ethash mining is not profitable" -ForegroundColor Red # Weighting for ETH/ETC?
+        If ([single]$ETHProfit -lt 0 -AND [single]$ETCProfit -lt 0) {Write-Host "ethash mining is not profitable" -ForegroundColor Red # Weighting for ETH/ETC?
             $ethashoff = $True}
         Elseif ([single]$ETHProfit -ge [single]$ETCProfit) {Write-Host "ETH Wins!" -ForegroundColor Green}
         Else {Write-Host "ETC Wins!" -ForegroundColor Green}
